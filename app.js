@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 import { connectDB } from "./utils/dbConnect.js";
-import AppError from "./utils/AppError.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 dotenv.config();
 
