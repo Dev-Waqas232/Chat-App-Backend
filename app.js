@@ -13,11 +13,6 @@ app.use(cors());
 
 const PORT = process.env.PORT || 5000;
 
-// Unknown route handler
-app.use("*", (req, res, next) => {
-  next(new AppError("Route not found", 404));
-});
-
 // Global Error Handler
 app.use(errorHandler);
 

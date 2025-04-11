@@ -15,7 +15,6 @@ const errorHandler = (err, req, res, next) => {
       error: message,
     });
   } else {
-    // Show stack trace in dev
     return res.status(statusCode).json({
       success: false,
       error: message,
