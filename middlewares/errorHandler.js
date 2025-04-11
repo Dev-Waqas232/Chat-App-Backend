@@ -9,10 +9,19 @@ const errorHandler = (err, req, res, next) => {
     message = "Internal Server Error";
   }
 
-  res.status(statusCode).json({
-    success: false,
-    error: message,
-  });
+  if (process.env.NODE_ENV === "production") {
+    return res.status(statusCode).json({
+      success: false,
+      error: message,
+    });
+  } else {
+    // Show stack trace in dev
+    return res.status(statusCode).json({
+      success: false,
+      error: message,
+      stack: err.stack,
+    });
+  }
 };
 
 export default errorHandler;
