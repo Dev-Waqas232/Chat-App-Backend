@@ -12,4 +12,4 @@ router.get("/verify", verify);
 
 router.get("/refresh", refresh);
 
-export { router as AuthRouter };
+export { router as authRouter };
