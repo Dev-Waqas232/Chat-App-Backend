@@ -3,7 +3,11 @@ import bcrypt from "bcrypt";
 import { User } from "../models/user.js";
 import AppError from "../utils/AppError.js";
 import catchAsync from "../utils/catchAsync.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import {
+  decodeRefreshToken,
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/jwt.js";
 
 const register = catchAsync(async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -35,9 +39,6 @@ const login = catchAsync(async (req, res, next) => {
   const accessToken = generateAccessToken({ id: user._id });
   const refreshToken = generateRefreshToken({ id: user._id });
 
-  user.refreshToken = refreshToken;
-  await user.save();
-
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -48,8 +49,46 @@ const login = catchAsync(async (req, res, next) => {
   res.status(200).json({ message: "Login", data: { token: accessToken } });
 });
 
-const verify = catchAsync(async (req, res, next) => {});
+const verify = catchAsync(async (req, res, next) => {
+  const id = req.user;
+  const user = await User.findById(id).select("-password -refreshToken");
 
-const refresh = catchAsync(async (req, res, next) => {});
+  if (!user) throw new AppError("User not found", 404);
+  res.status(200).json({ message: "Verified", data: { user } });
+});
 
-export { register, login, refresh, verify };
+const refresh = catchAsync(async (req, res, next) => {
+  const token = req.cookies.refreshToken;
+  if (!token) throw new AppError("Refresh Token missing", 400);
+
+  let decoded;
+  try {
+    decoded = decodeRefreshToken(token);
+  } catch (err) {
+    throw new AppError("Invalid or expired Refresh Token", 401);
+  }
+
+  const newAccessToken = generateAccessToken(decoded.id);
+  const newRefreshToken = generateRefreshToken(decoded.id);
+
+  res
+    .cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+    .status(200)
+    .json({ token: newAccessToken });
+});
+
+const logout = catchAsync(async (req, res, next) => {
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+});
+
+export { register, login, refresh, verify, logout };

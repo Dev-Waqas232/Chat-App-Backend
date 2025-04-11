@@ -14,18 +14,6 @@ const UserSchema = new Schema(
       type: String,
       required: true,
     },
-    otpCode: {
-      type: Number,
-    },
-    forgetPasswordToken: {
-      type: String,
-    },
-    forgetPasswordExpiry: {
-      type: Date,
-    },
-    refreshToken: {
-      type: String,
-    },
   },
   { timestamps: true }
 );
