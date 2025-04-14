@@ -17,7 +17,7 @@ router.post("/login", login);
 
 router.get("/verify", validate, verify);
 
-router.get("/refresh", refresh);
+router.post("/refresh", refresh);
 
 router.post("/logout", logout);
 

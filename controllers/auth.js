@@ -4,9 +4,9 @@ import { User } from "../models/user.js";
 import AppError from "../utils/AppError.js";
 import catchAsync from "../utils/catchAsync.js";
 import {
-  decodeRefreshToken,
   generateAccessToken,
   generateRefreshToken,
+  verifyRefreshToken,
 } from "../utils/jwt.js";
 
 const register = catchAsync(async (req, res, next) => {
@@ -42,7 +42,7 @@ const login = catchAsync(async (req, res, next) => {
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "None",
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
@@ -58,18 +58,18 @@ const verify = catchAsync(async (req, res, next) => {
 });
 
 const refresh = catchAsync(async (req, res, next) => {
-  const token = req.cookies.refreshToken;
+  const token = req.cookies?.refreshToken;
   if (!token) throw new AppError("Refresh Token missing", 400);
 
-  let decoded;
-  try {
-    decoded = decodeRefreshToken(token);
-  } catch (err) {
-    throw new AppError("Invalid or expired Refresh Token", 401);
+  const { valid, expired, decoded } = verifyRefreshToken(token);
+
+  if (!valid) {
+    const message = expired ? "Token expired" : "Invalid token";
+    return res.status(401).json({ message });
   }
 
-  const newAccessToken = generateAccessToken(decoded.id);
-  const newRefreshToken = generateRefreshToken(decoded.id);
+  const newAccessToken = generateAccessToken({ id: decoded.id });
+  const newRefreshToken = generateRefreshToken({ id: decoded.id });
 
   res
     .cookie("refreshToken", newRefreshToken, {
@@ -79,7 +79,7 @@ const refresh = catchAsync(async (req, res, next) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     })
     .status(200)
-    .json({ token: newAccessToken });
+    .json({ data: { token: newAccessToken } });
 });
 
 const logout = catchAsync(async (req, res, next) => {
