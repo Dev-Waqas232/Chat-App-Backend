@@ -54,7 +54,7 @@ const verify = catchAsync(async (req, res, next) => {
   const user = await User.findById(id).select("-password -refreshToken");
 
   if (!user) throw new AppError("User not found", 404);
-  res.status(200).json({ message: "Verified", data: { user } });
+  res.status(200).json({ message: "Verified", data: user });
 });
 
 const refresh = catchAsync(async (req, res, next) => {
